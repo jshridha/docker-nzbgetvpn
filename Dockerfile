@@ -10,7 +10,7 @@ MAINTAINER binhex
 ADD startnzbget.sh /home/nobody/start.sh
 
 # add supervisor conf file for app
-ADD nzbget.conf /etc/supervisor/conf.d/nzbget.conf
+ADD nzbgetvpn.conf /etc/supervisor/conf.d/nzbgetvpn.conf
 
 # add install bash script
 ADD installnzbget.sh /root/installnzbget.sh
