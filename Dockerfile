@@ -1,18 +1,55 @@
-FROM binhex/arch-base:2015022600
+FROM binhex/arch-base:2015030300
 MAINTAINER binhex
 
+
+##NZBGET
 # additional files
 ##################
-## NZBGET
+
 # copy prerun bash shell script (checks for existence of nzbget config)
 ADD startnzbget.sh /home/nobody/start.sh
 
 # add supervisor conf file for app
 ADD nzbget.conf /etc/supervisor/conf.d/nzbget.conf
 
-## openVPN
+# add install bash script
+ADD installnzbget.sh /root/installnzbget.sh
+
+# install app
+#############
+
+# make executable and run bash scripts to install app
+RUN chmod +x /root/installnzbget.sh /home/nobody/start.sh && \
+	/bin/bash /root/installnzbget.sh
+	
+# docker settings
+#################
+
+# map /config to host defined config path (used to store configuration from app)
+VOLUME /config
+
+# map /data to host defined data path (used to store downloads or use blackhole)
+VOLUME /data
+
+# map /media to host defined media path (used to read/write to media library)
+VOLUME /media
+
+# expose port for http
+EXPOSE 6789
+
+# run supervisor
+################
+
+# run supervisor
+#CMD ["supervisord", "-c", "/etc/supervisor.conf", "-n"]
+
+##VPN
+
+# additional files
+##################
+
 # add supervisor conf file for app
-ADD delugevpn.conf /etc/supervisor/conf.d/delugevpn.conf
+#ADD delugevpn.conf /etc/supervisor/conf.d/delugevpn.conf
 
 # add bash script to create tun adapter, setup ip route and create vpn tunnel
 ADD startvpn.sh /root/start.sh
@@ -30,35 +67,26 @@ ADD config/crl.pem /home/nobody/crl.pem
 # add sample openvpn.ovpn file (based on pia netherlands)
 ADD config/openvpn.ovpn /home/nobody/openvpn.ovpn
 
+# add install bash script
+ADD installvpn.sh /root/installvpn.sh
+
 # install app
 #############
 
-# install install app using pacman, set perms, cleanup
-RUN pacman -Sy --noconfirm && \
-	pacman -S nzbget --noconfirm && \
-	pacman -S net-tools openvpn unrar unzip p7zip --noconfirm && \
-	chmod +x /root/start.sh /root/openvpn.sh /home/nobody/checkip.sh && \
-	chown -R nobody:users /usr/bin/nzbget /usr/share/nzbget/nzbget.conf /home/nobody/start.sh && \
-	chmod -R 775 /usr/bin/nzbget /usr/share/nzbget/nzbget.conf /home/nobody/start.sh && \
-	yes|pacman -Scc && \	
-	rm -rf /usr/share/locale/* && \
-	rm -rf /usr/share/man/* && \
-#	rm -rf /root/* && \
-	rm -rf /tmp/*
-	
+# make executable and run bash scripts to install app
+RUN chmod +x /root/installvpn.sh /root/start.sh /root/openvpn.sh /home/nobody/checkip.sh && \
+	/bin/bash /root/installvpn.sh
+
 # docker settings
 #################
 
 # map /config to host defined config path (used to store configuration from app)
 VOLUME /config
 
-# map /data to host defined data path (used to store downloads or use blackhole)
+# map /data to host defined data path (used to store data from app)
 VOLUME /data
 
-# map /media to host defined media path (used to read/write to media library)
-VOLUME /media
-
-# expose port for http
+# expose port for nzbget webui
 EXPOSE 6789
 
 # run supervisor
