@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # define pacman packages
-pacman_packages="unzip unrar nzbget"
+pacman_packages="unzip unrar nzbget p7zip"
 
 # install pre-reqs
 pacman -Sy --noconfirm
