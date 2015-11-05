@@ -1,5 +1,5 @@
-FROM binhex/arch-base:2015080700
-MAINTAINER binhex
+FROM phusion/baseimage:0.9.17
+MAINTAINER Bungy
 
 ##VPN
 
