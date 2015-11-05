@@ -1,18 +1,22 @@
 #!/bin/bash
 
-# define pacman packages
-pacman_packages="unzip unrar nzbget p7zip"
+#install apt packages
+apt-get install -y unzip unrar p7zip supervisor wget
 
-# install pre-reqs
-pacman -Sy --noconfirm
-pacman -S --needed $pacman_packages --noconfirm
+# Get the installtion script
+wget -O - http://nzbget.net/info/nzbget-version-linux.json | \
+sed -n "s/^.*stable-download.*: \"\(.*\)\".*/\1/p" | \
+wget --no-check-certificate -i - -O nzbget-latest-bin-linux.run || \
+echo "*** Download failed ***"
+
+sh nzbget-latest-bin-linux.run --destdir /nzbget
 
 # set permissions
-chown -R nobody:users /usr/bin/nzbget /usr/share/nzbget/nzbget.conf /home/nobody/start.sh
-chmod -R 775 /usr/bin/nzbget /usr/share/nzbget/nzbget.conf /home/nobody/start.sh
+chown -R nobody:users /nzbget/nzbget /nzbget/nzbget.conf /home/nobody/start.sh
+chmod -R 775 /nzbget/nzbget /nzbget/nzbget.conf /home/nobody/start.sh
 
 # cleanup
-yes|pacman -Scc
 rm -rf /usr/share/locale/*
 rm -rf /usr/share/man/*
-rm -rf /tmp/*
+apt-get clean
+rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
