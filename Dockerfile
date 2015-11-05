@@ -44,5 +44,5 @@ VOLUME /media
 EXPOSE 6789
 
 # run supervisor
-CMD ["supervisord", "-c", "/etc/supervisor.conf", "-n"]
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
 
