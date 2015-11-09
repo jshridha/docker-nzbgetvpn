@@ -10,6 +10,7 @@ wget --no-check-certificate -i - -O nzbget-latest-bin-linux.run || \
 echo "*** Download failed ***"
 
 sh nzbget-latest-bin-linux.run --destdir /nzbget
+rm nzbget-latest-bin-linux.run
 
 # set permissions
 chown -R nobody:users /nzbget/nzbget /nzbget/nzbget.conf /home/nobody/start.sh
