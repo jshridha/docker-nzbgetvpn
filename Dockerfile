@@ -34,6 +34,10 @@ RUN chmod +x /root/*.sh /home/nobody/*.sh && \
 # map /config to host defined config path (used to store configuration from app)
 VOLUME /config
 
+RUN mkdir /data && \
+    chown nobody:users /data && \
+	chmod 0775 /data
+
 # map /data to host defined data path (used to store data from app)
 VOLUME /data
 
