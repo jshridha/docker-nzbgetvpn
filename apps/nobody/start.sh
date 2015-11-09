@@ -11,7 +11,7 @@ if [[ -f /config/nzbget.conf ]]; then
 else
 	
 	# copy to /config
-	cp /usr/share/nzbget/webui/nzbget.conf /config/
+	cp /nzbget/nzbget.conf /config/
 
 	# set maindir to /data folder for downloads
 	sed -i 's/MainDir=~\/downloads/MainDir=\/data/g' /config/nzbget.conf
