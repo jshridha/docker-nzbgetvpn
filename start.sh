@@ -3,6 +3,12 @@
 # create directory
 mkdir -p /config/openvpn
 
+# set permissions to user nobody
+chown -R nobody:users /config
+chmod -R 775 /config
+chown nobody:users /data
+chmod 775 /data
+
 # wildcard search for openvpn config files
 VPN_CONFIG=$(find /config/openvpn -maxdepth 1 -name "*.ovpn" -print)
 	
@@ -79,12 +85,6 @@ fi
 VPN_PORT=$(cat "$VPN_CONFIG" | grep -P -o -m 1 '^remote\s[^\r\n]+' | grep -P -o -m 1 '[\d]+$')
 VPN_PROTOCOL=$(cat "$VPN_CONFIG" | grep -P -o -m 1 '(?<=proto\s)[^\r\n]+')
 	
-# set permissions to user nobody
-chown -R nobody:users /config/openvpn
-chmod -R 775 /config/openvpn
-chown nobody:users /data
-chmod 775 /data
-
 # create the tunnel device
 [ -d /dev/net ] || mkdir -p /dev/net
 [ -c /dev/net/tun ] || mknod /dev/net/tun c 10 200
