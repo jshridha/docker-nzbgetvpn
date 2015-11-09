@@ -15,6 +15,7 @@ else
 
 	# set maindir to /data folder for downloads
 	sed -i 's/MainDir=~\/downloads/MainDir=\/data/g' /config/nzbget.conf
+	sed -i '/MainDir=${AppDir}\/downloads/ s/=.*/=\/data/' /config/nzbget.conf
 	
 fi
 
