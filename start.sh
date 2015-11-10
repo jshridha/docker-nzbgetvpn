@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Check and set permissions
+usermod -G users nobody
+
+PUID=${PUID:-99}
+PGID=${PGID:-100}
+
+if [ ! "$(id -u nobody)" -eq "$PUID" ]; then usermod -o -u "$PUID" nobody ; fi
+if [ ! "$(id -g nobody)" -eq "$PGID" ]; then groupmod -o -g "$PGID" users && usermod -g "$PGID" nobody; fi
+
 # create directory
 mkdir -p /config/openvpn
 
