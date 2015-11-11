@@ -195,5 +195,8 @@ echo "[info] nameservers"
 cat /etc/resolv.conf
 echo "--------------------"
 
+# start nzbget
+/sbin/setuser nobody /home/nobody/start.sh
+
 # start openvpn tunnel
-source /root/openvpn.sh
+/sbin/setuser root /usr/sbin/openvpn --cd /config/openvpn --config "$VPN_CONFIG"
