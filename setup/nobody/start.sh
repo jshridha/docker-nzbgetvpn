@@ -5,7 +5,6 @@ if [[ -f /config/nzbget.conf ]]; then
 
 	echo "nzbget.conf exists"
   sed -i '/ConfigTemplate=\/usr\/share/ s/=.*/=${AppDir}\/webui\/nzbget.conf.template/' /config/nzbget.conf
-  sed -i '/WebDir=\/usr\/share/ s/=.*/=${AppDir}\/webui/' /config/nzbget.conf
 
 else
 
@@ -15,6 +14,7 @@ else
 	# set maindir to /data folder for downloads
   sed -i 's/MainDir=~\/downloads/MainDir=\/data/g' /config/nzbget.conf
   sed -i '/MainDir=${AppDir}\/downloads/ s/=.*/=\/data/' /config/nzbget.conf
+	sed -i '/WebDir=${AppDir}\/webui/ s/=.*/=\/usr\/share\/nzbget\/webui/' /config/nzbget.conf
 
 fi
 
