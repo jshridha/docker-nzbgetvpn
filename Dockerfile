@@ -1,52 +1,18 @@
-FROM phusion/baseimage:0.9.17
-MAINTAINER Bungy
+FROM binhex/arch-openvpn
+MAINTAINER jshridha@gmail.com
 
-##VPN
-
-# additional files
-##################
-
-# add supervisor conf file for app
-ADD *.conf /etc/supervisor/conf.d/
-
-# add bash scripts to install app, and setup iptables, routing etc
-ADD *.sh /root/
-
-# add bash script to run openvpn
+ADD supervisor/*.conf /etc/supervisor/conf.d/
+ADD setup/root/*.sh /root/
+ADD setup/nobody/*.sh /home/nobody/
 ADD apps/root/*.sh /root/
-
-# add bash script to check tunnel ip is valid
 ADD apps/nobody/*.sh /home/nobody/
 
-# add pia certificates and sample openvpn.ovpn file
-ADD config/pia/* /home/nobody/
-
-# install app
-#############
-
-# make executable and run bash scripts to install app
+# Install the app
 RUN chmod +x /root/*.sh /home/nobody/*.sh && \
-	/bin/bash /root/installvpn.sh && /bin/bash /root/installnzbget.sh
+	/bin/bash /root/install.sh
 
-# docker settings
-#################
-
-# map /config to host defined config path (used to store configuration from app)
-VOLUME /config
-
-RUN mkdir /data && \
-    chown nobody:users /data && \
-	chmod 0775 /data
-
-# map /data to host defined data path (used to store data from app)
-VOLUME /data
-
-# map /media to host defined media path (used to read/write to media library)
-VOLUME /media
-
-# expose port for nzbget webgui
+VOLUME /config /data
 EXPOSE 6789
 
-# run supervisor
-CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
-
+# run script to set uid, gid and permissions
+CMD ["/bin/bash", "/root/init.sh"]
