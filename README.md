@@ -117,6 +117,6 @@ id <username>
 
 The STRONG_CERTS environment variable is used to define whether to use strong certificates and enhanced encryption ciphers when connecting to PIA (does not affect other providers).
 ___
-If you appreciate my work, then please consider buying me a beer  :D
+If you appreciate my work, then please consider buying me or binhex a beer  :D
 
 [Support forum](http://lime-technology.com/forum/index.php?topic=38930)
