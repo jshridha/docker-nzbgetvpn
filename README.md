@@ -33,7 +33,7 @@ docker run -d \
     -e DEBUG=<true|false> \
     -e PUID=<UID for user> \
     -e PGID=<GID for user> \
-    jshridha/nzbgetvpn:latest
+    jshridha/docker-nzbgetvpn:latest
 ```
 
 Please replace all user variables in the above command defined by <> with the correct values.
@@ -71,7 +71,7 @@ docker run -d \
     -e DEBUG=false \
     -e PUID=0 \
     -e PGID=0 \
-    jshridha/nzbgetvpn:latest
+    jshridha/docker-nzbgetvpn:latest
 ```
 
 **AirVPN provider**
@@ -104,7 +104,7 @@ docker run -d \
     -e DEBUG=false \
     -e PUID=0 \
     -e PGID=0 \
-    jshridha/nzbgetvpn:latest
+    jshridha/docker-nzbgetvpn:latest
 ```
 
 **Notes**
