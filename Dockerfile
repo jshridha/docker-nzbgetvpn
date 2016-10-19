@@ -1,4 +1,4 @@
-FROM binhex/arch-openvpn:2.3.9-32
+FROM binhex/arch-openvpn:2.3.9-37
 MAINTAINER jshridha@gmail.com
 
 ADD supervisor/*.conf /etc/supervisor/conf.d/
