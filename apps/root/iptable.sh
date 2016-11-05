@@ -1,37 +1,21 @@
 #!/bin/bash
 
-# check for presence of network interface docker0
-check_network=$(ifconfig | grep docker0)
-
-# if network interface docker0 is present then we are running in host mode and thus must exit
-if [[ ! -z "${check_network}" ]]; then
-	echo "[crit] Network type detected as 'Host', this will cause major issues, please stop the container and switch back to 'Bridge' mode" && exit 1
-fi
-
 # ip route
 ###
 
-if [[ ! -z "${LAN_NETWORK}" ]]; then
+# split comma seperated string into list from LAN_NETWORK env variable
+IFS=',' read -ra lan_network_list <<< "${LAN_NETWORK}"
 
-	# split comma seperated string into list from LAN_NETWORK env variable
-	IFS=',' read -ra lan_network_list <<< "${LAN_NETWORK}"
+# process lan networks in the list
+for lan_network_item in "${lan_network_list[@]}"; do
 
-	# process lan networks in the list
-	for lan_network_item in "${lan_network_list[@]}"; do
+	# strip whitespace from start and end of lan_network_item
+	lan_network_item=$(echo "${lan_network_item}" | sed -e 's/^[ \t]*//')
 
-		# strip whitespace from start and end of lan_network_item
-		lan_network_item=$(echo "${lan_network_item}" | sed -e 's/^[ \t]*//')
+	echo "[info] Adding ${lan_network_item} as route via docker eth0"
+	ip route add "${lan_network_item}" via "${DEFAULT_GATEWAY}" dev eth0
 
-		echo "[info] Adding ${lan_network_item} as route via docker eth0"
-		ip route add "${lan_network_item}" via "${DEFAULT_GATEWAY}" dev eth0
-
-	done
-
-else
-
-	echo "[crit] LAN network not defined, please specify via env variable LAN_NETWORK" && exit 1
-
-fi
+done
 
 echo "[info] ip route defined as follows..."
 echo "--------------------"
@@ -69,9 +53,16 @@ if [[ $iptable_mangle_exit_code == 0 ]]; then
 	ip rule add fwmark 1 table webui
 	ip route add default via $DEFAULT_GATEWAY table webui
 
+	# setup route for privoxy using set-mark to route traffic for port 8118 to eth0
+	if [[ $ENABLE_PRIVOXY == "yes" ]]; then
+		echo "8118    privoxy" >> /etc/iproute2/rt_tables
+		ip rule add fwmark 2 table privoxy
+		ip route add default via $DEFAULT_GATEWAY table privoxy
+	fi
+
 else
 
-	echo "[warn] iptable_mangle module not supported, you will not be able to connect to nzbget webui outside of your LAN"
+	echo "[warn] iptable_mangle module not supported, you will not be able to connect to nzbget webui or Privoxy outside of your LAN"
 
 fi
 
@@ -82,7 +73,7 @@ fi
 iptables -P INPUT DROP
 
 # accept input to tunnel adapter
-iptables -A INPUT -i tun0 -j ACCEPT
+iptables -A INPUT -i "${VPN_DEVICE_TYPE}0" -j ACCEPT
 
 # accept input to/from docker containers (172.x range is internal dhcp)
 iptables -A INPUT -s 172.17.0.0/16 -d 172.17.0.0/16 -j ACCEPT
@@ -93,6 +84,12 @@ iptables -A INPUT -i eth0 -p $VPN_PROTOCOL --sport $VPN_PORT -j ACCEPT
 # accept input to nzbget webui port 6789
 iptables -A INPUT -i eth0 -p tcp --dport 6789 -j ACCEPT
 iptables -A INPUT -i eth0 -p tcp --sport 6789 -j ACCEPT
+
+# accept input to privoxy port 8118 if enabled
+if [[ $ENABLE_PRIVOXY == "yes" ]]; then
+	iptables -A INPUT -i eth0 -p tcp --dport 8118 -j ACCEPT
+	iptables -A INPUT -i eth0 -p tcp --sport 8118 -j ACCEPT
+fi
 
 # process lan networks in the list
 for lan_network_item in "${lan_network_list[@]}"; do
@@ -121,7 +118,7 @@ iptables -A INPUT -i lo -j ACCEPT
 iptables -P OUTPUT DROP
 
 # accept output from tunnel adapter
-iptables -A OUTPUT -o tun0 -j ACCEPT
+iptables -A OUTPUT -o "${VPN_DEVICE_TYPE}0" -j ACCEPT
 
 # accept output to/from docker containers (172.x range is internal dhcp)
 iptables -A OUTPUT -s 172.17.0.0/16 -d 172.17.0.0/16 -j ACCEPT
@@ -136,11 +133,23 @@ if [[ $iptable_mangle_exit_code == 0 ]]; then
 	iptables -t mangle -A OUTPUT -p tcp --dport 6789 -j MARK --set-mark 1
 	iptables -t mangle -A OUTPUT -p tcp --sport 6789 -j MARK --set-mark 1
 
+	# accept output from privoxy port 8118 - used for external access
+	if [[ $ENABLE_PRIVOXY == "yes" ]]; then
+		iptables -t mangle -A OUTPUT -p tcp --dport 8118 -j MARK --set-mark 2
+		iptables -t mangle -A OUTPUT -p tcp --sport 8118 -j MARK --set-mark 2
+	fi
+	
 fi
 
 # accept output from nzbget webui port 6789 - used for lan access
 iptables -A OUTPUT -o eth0 -p tcp --dport 6789 -j ACCEPT
 iptables -A OUTPUT -o eth0 -p tcp --sport 6789 -j ACCEPT
+
+# accept output from privoxy port 8118 - used for lan access
+if [[ $ENABLE_PRIVOXY == "yes" ]]; then
+	iptables -A OUTPUT -o eth0 -p tcp --dport 8118 -j ACCEPT
+	iptables -A OUTPUT -o eth0 -p tcp --sport 8118 -j ACCEPT
+fi
 
 # process lan networks in the list
 for lan_network_item in "${lan_network_list[@]}"; do
@@ -166,3 +175,4 @@ echo "[info] iptables defined as follows..."
 echo "--------------------"
 iptables -S
 echo "--------------------"
+
