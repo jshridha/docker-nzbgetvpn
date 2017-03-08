@@ -4,7 +4,7 @@
 set -e
 
 # define pacman packages
-pacman_packages="unzip unrar"
+pacman_packages="unzip unrar p7zip"
 
 # install pre-reqs
 pacman -S --needed $pacman_packages --noconfirm
