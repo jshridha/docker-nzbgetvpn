@@ -55,8 +55,7 @@ PIA users will need to supply VPN_USER and VPN_PASS, optionally define VPN_REMOT
 ```
 docker run -d \
     --cap-add=NET_ADMIN \
-    -p 8112:8112 \
-    -p 8118:8118 \
+    -p 6789:6789 \
     --name=nzbgetvpn \
     -v /apps/docker/nzbget/data:/data \
     -v /apps/docker/nzbget/config:/config \
@@ -93,8 +92,7 @@ AirVPN users will need to generate a unique OpenVPN configuration file by using 
 ```
 docker run -d \
     --cap-add=NET_ADMIN \
-    -p 8112:8112 \
-    -p 8118:8118 \
+    -p 6789:6789 \
     --name=nzbgetvpn \
     -v /apps/docker/nzbget/data:/data \
     -v /apps/docker/nzbget/config:/config \
