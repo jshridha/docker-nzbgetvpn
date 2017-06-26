@@ -1,18 +1,42 @@
-FROM binhex/arch-openvpn:2.3.9-46
-MAINTAINER jshridha@gmail.com
+FROM binhex/arch-openvpn:2.3.9-98
+MAINTAINER jshridha
 
-ADD supervisor/*.conf /etc/supervisor/conf.d/
-ADD setup/root/*.sh /root/
-ADD setup/nobody/*.sh /home/nobody/
-ADD apps/root/*.sh /root/
-ADD apps/nobody/*.sh /home/nobody/
+# additional files
+##################
 
-# Install the app
+# add supervisor conf file for app
+ADD build/*.conf /etc/supervisor/conf.d/
+
+# add bash scripts to install app
+ADD build/root/*.sh /root/
+
+# add run bash scripts
+ADD run/root/*.sh /root/
+
+# add run bash scripts
+ADD run/nobody/*.sh /home/nobody/
+
+# install app
+#############
+
+# make executable and run bash scripts to install app
 RUN chmod +x /root/*.sh /home/nobody/*.sh && \
 	/bin/bash /root/install.sh
 
-VOLUME /config /data
+# docker settings
+#################
+
+# map /config to host defined config path (used to store configuration from app)
+VOLUME /config
+
+# map /data to host defined data path (used to store data from app)
+VOLUME /data
+
+# expose port for http
 EXPOSE 6789
+
+# set permissions
+#################
 
 # run script to set uid, gid and permissions
 CMD ["/bin/bash", "/root/init.sh"]

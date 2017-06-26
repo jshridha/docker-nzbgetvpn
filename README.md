@@ -30,9 +30,11 @@ docker run -d \
     -e VPN_DEVICE_TYPE=<tun|tap> \
     -e VPN_PROV=<pia|airvpn|custom> \
     -e STRONG_CERTS=<yes|no> \
+	-e ENABLE_PRIVOXY=<yes|no> \
     -e LAN_NETWORK=<lan ipv4 network>/<cidr notation> \
     -e NAME_SERVERS=<name server ip(s)> \
     -e DEBUG=<true|false> \
+	-e UMASK=<umask for created files> \
     -e PUID=<UID for user> \
     -e PGID=<GID for user> \
     jshridha/docker-nzbgetvpn:latest
@@ -69,9 +71,11 @@ docker run -d \
     -e VPN_DEVICE_TYPE=<tun|tap> \
     -e VPN_PROV=pia \
     -e STRONG_CERTS=no \
+	-e ENABLE_PRIVOXY=yes \
     -e LAN_NETWORK=192.168.1.0/24 \
     -e NAME_SERVERS=8.8.8.8,8.8.4.4 \
     -e DEBUG=false \
+	-e UMASK=000 \
     -e PUID=0 \
     -e PGID=0 \
     jshridha/docker-nzbgetvpn:latest
@@ -103,9 +107,11 @@ docker run -d \
     -e VPN_PROTOCOL=udp \
     -e VPN_DEVICE_TYPE=<tun|tap> \
     -e VPN_PROV=airvpn \
+	-e ENABLE_PRIVOXY=yes \
     -e LAN_NETWORK=192.168.1.0/24 \
     -e NAME_SERVERS=8.8.8.8,8.8.4.4 \
     -e DEBUG=false \
+	-e UMASK=000 \
     -e PUID=0 \
     -e PGID=0 \
     jshridha/docker-nzbgetvpn:latest
