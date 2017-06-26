@@ -46,7 +46,7 @@ else
 		if [[ ! -z "${vpn_ip}" ]]; then
 
 			# check if nzbget is running, if not then skip reconfigure for ip
-			if ! pgrep -x python2 > /dev/null; then
+			if ! pgrep -x nzbget > /dev/null; then
 
 				echo "[info] Nzbget not running"
 
