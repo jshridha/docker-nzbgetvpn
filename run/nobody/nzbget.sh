@@ -27,6 +27,8 @@ if [[ "${VPN_ENABLED}" == "no" ]]; then
 	echo "[info] Attempting to start Nzbget..."
 	/usr/bin/nzbget -D -c /config/nzbget.conf
 
+	echo "[info] Nzbget started"
+
 else
 
 	echo "[info] VPN is enabled, checking VPN tunnel local ip is valid"
