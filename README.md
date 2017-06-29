@@ -9,7 +9,7 @@ NZBGet is a cross-platform binary newsgrabber for nzb files, written in C++. It 
 
 **Build notes**
 
-Latest stable NZBGet release from Arch Linux repo.
+Latest stable NZBGet release from Arch Linux repo (v19.0)
 Latest stable OpenVPN release from Arch Linux repo.
 
 **Usage**
