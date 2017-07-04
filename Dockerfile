@@ -1,4 +1,4 @@
-FROM binhex/arch-openvpn:2.3.9-98
+FROM binhex/arch-openvpn
 MAINTAINER jshridha
 
 # additional files
@@ -37,6 +37,8 @@ EXPOSE 6789
 
 # set permissions
 #################
+
+ENV STRICT_PORT_FORWARD=no
 
 # run script to set uid, gid and permissions
 CMD ["/bin/bash", "/root/init.sh"]
