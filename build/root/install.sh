@@ -33,7 +33,7 @@ fi
 ####
 
 # define arch official repo (aor) packages
-aor_packages="nzbget"
+aor_packages=""
 
 # call aor script (arch official repo)
 source /root/aor.sh
@@ -47,6 +47,10 @@ aur_packages=""
 # call aur install script (arch user repo)
 source /root/aur.sh
 
+# install nzbget
+curl -o /tmp/nzbget.pkg.tar.xz https://archive.archlinux.org/packages/n/nzbget/nzbget-$NZBGET_VERSION-x86_64.pkg.tar.xz  
+pacman -U --noconfirm /tmp/nzbget.pkg.tar.xz
+rm /tmp/nzbget.pkg.tar.xz
 # config
 ####
 
