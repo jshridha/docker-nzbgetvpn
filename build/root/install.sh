@@ -22,7 +22,7 @@ mv /root/curly.sh /usr/local/bin/
 ####
 
 # define pacman packages
-pacman_packages="git python2 python2-pyopenssl python2-feedparser p7zip ipcalc unzip unrar"
+pacman_packages="git python2 python2-pyopenssl python2-feedparser p7zip ipcalc unzip unrar python3"
 
 # install compiled packages using pacman
 if [[ ! -z "${pacman_packages}" ]]; then
