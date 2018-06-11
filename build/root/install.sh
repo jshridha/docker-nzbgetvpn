@@ -22,7 +22,7 @@ mv /root/curly.sh /usr/local/bin/
 ####
 
 # define pacman packages
-pacman_packages="git python2 python2-pyopenssl python2-feedparser p7zip ipcalc unzip unrar python3"
+pacman_packages="git python2 python2-pyopenssl python2-feedparser p7zip ipcalc unzip unrar python3 wget"
 
 # install compiled packages using pacman
 if [[ ! -z "${pacman_packages}" ]]; then
@@ -48,9 +48,13 @@ aur_packages=""
 source /root/aur.sh
 
 # install nzbget
-curl -o /tmp/nzbget.pkg.tar.xz https://archive.archlinux.org/packages/n/nzbget/nzbget-$NZBGET_VERSION-x86_64.pkg.tar.xz  
-pacman -U --noconfirm /tmp/nzbget.pkg.tar.xz
-rm /tmp/nzbget.pkg.tar.xz
+#curl -o /tmp/nzbget.pkg.tar.xz https://archive.archlinux.org/packages/n/nzbget/nzbget-$NZBGET_VERSION-x86_64.pkg.tar.xz  
+#pacman -U --noconfirm /tmp/nzbget.pkg.tar.xz
+#rm /tmp/nzbget.pkg.tar.xz
+wget -O /tmp/nzbget.run https://github.com/nzbget/nzbget/releases/download/v$NZBGET_VERSION/nzbget-$NZBGET_VERSION-bin-linux.run
+sh /tmp/nzbget.run --destdir /usr/sbin/nzbget_bin
+ln -s /usr/sbin/nzbget_bin/nzbget /usr/sbin/nzbget
+
 # config
 ####
 

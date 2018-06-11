@@ -1,10 +1,13 @@
 #!/bin/bash
 
+#CONFIG_DIR=/usr/share/nzbget
+CONFIG_DIR=/usr/sbin/nzbget_bin
+
 # if config file doesnt exist then copy stock config file
 if [[ ! -f /config/nzbget.conf ]]; then
 
 	echo "[info] Nzbget config file doesn't exist, copying default..."
-	cp /usr/share/nzbget/nzbget.conf /config/
+	cp $CONFIG_DIR/nzbget.conf /config/
 
 	# set maindir to /data folder for downloads
 	sed -i 's/MainDir=~\/downloads/MainDir=\/data/g' /config/nzbget.conf
@@ -13,10 +16,13 @@ if [[ ! -f /config/nzbget.conf ]]; then
 else
 
 	echo "[info] Nzbget config file already exists, skipping copy"
-	sed -i '/ConfigTemplate=${AppDir}/ s/=.*/=\/usr\/share\/nzbget\/nzbget.conf/' /config/nzbget.conf
+#	sed -i '/ConfigTemplate=${AppDir}/ s/=.*/=\/usr\/share\/nzbget\/nzbget.conf/' /config/nzbget.conf
 	sed -i '/WebDir=${AppDir}\/webui/ s/=.*/=\/usr\/share\/nzbget\/webui/' /config/nzbget.conf
 
 fi
+sed -i '/WebDir=*/ s/=.*/=${AppDir}\/webui/' /config/nzbget.conf
+sed -i '/ConfigTemplate=*/ s/=.*/=${AppDir}/webui/nzbget.conf.template/' /config/nzbget.conf
+sed -i  '/ConfigTemplate=*/ s/=.*/=${AppDir}\/webui\/nzbget.conf.template/' /config/nzbget.conf
 
 # if vpn set to "no" then don't run openvpn
 if [[ "${VPN_ENABLED}" == "no" ]]; then
