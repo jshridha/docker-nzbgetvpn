@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# change openvpn config 'tcp-client' to compatible iptables 'tcp'
+if [[ "${VPN_PROTOCOL}" == "tcp-client" ]]; then
+	export VPN_PROTOCOL="tcp"
+fi
+
 # ip route
 ###
 
@@ -10,7 +15,7 @@ IFS=',' read -ra lan_network_list <<< "${LAN_NETWORK}"
 for lan_network_item in "${lan_network_list[@]}"; do
 
 	# strip whitespace from start and end of lan_network_item
-	lan_network_item=$(echo "${lan_network_item}" | sed -e 's/^[ \t]*//')
+	lan_network_item=$(echo "${lan_network_item}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
 
 	echo "[info] Adding ${lan_network_item} as route via docker eth0"
 	ip route add "${lan_network_item}" via "${DEFAULT_GATEWAY}" dev eth0
@@ -22,7 +27,6 @@ echo "--------------------"
 ip route
 echo "--------------------"
 
-
 # setup iptables marks to allow routing of defined ports via eth0
 ###
 
@@ -30,26 +34,18 @@ if [[ "${DEBUG}" == "true" ]]; then
 	echo "[debug] Modules currently loaded for kernel" ; lsmod
 fi
 
-# check kernel for iptable_mangle module
-lsmod | grep "iptable_mangle" > /dev/null
+# check we have iptable_mangle, if so setup fwmark
+lsmod | grep iptable_mangle
 iptable_mangle_exit_code=$?
 
-# delect if iptable mangle module present
-if [[ $iptable_mangle_exit_code != 0 ]]; then
-
-	echo "[warn] 'iptable_mangle' kernel module not available, you will not be able to connect to the applications Web UI or Privoxy outside of your LAN"
-	echo "[info] unRAID users: Please attempt to load the module by executing the following on your host:- '/sbin/modprobe iptable_mangle'"
-	echo "[info] Ubuntu users: Please attempt to load the module by executing the following on your host:- '/sbin/modprobe iptable_mangle'"
-	echo "[info] Synology users: Please attempt to load the module by executing the following on your host:- 'insmod /lib/modules/iptable_mangle.ko'"
-
-else
+if [[ $iptable_mangle_exit_code == 0 ]]; then
 
 	echo "[info] iptable_mangle support detected, adding fwmark for tables"
 
-	# setup route for nzbget webui http using set-mark to route traffic for port 6789 to eth0
-	echo "6789    webui_http" >> /etc/iproute2/rt_tables
-	ip rule add fwmark 1 table webui_http
-	ip route add default via $DEFAULT_GATEWAY table webui_http
+	# setup route for nzbget webui using set-mark to route traffic for port 6789 to eth0
+	echo "6789    webui" >> /etc/iproute2/rt_tables
+	ip rule add fwmark 1 table webui
+	ip route add default via $DEFAULT_GATEWAY table webui
 
 fi
 
@@ -78,11 +74,14 @@ echo "[info] Docker network defined as ${docker_network_cidr}"
 # input iptable rules
 ###
 
-# set policy to drop for input
+# set policy to drop ipv4 for input
 iptables -P INPUT DROP
 
+# set policy to drop ipv6 for input
+ip6tables -P INPUT DROP 1>&- 2>&-
+
 # accept input to tunnel adapter
-iptables -A INPUT -i "${VPN_DEVICE_TYPE}"0 -j ACCEPT
+iptables -A INPUT -i "${VPN_DEVICE_TYPE}" -j ACCEPT
 
 # accept input to/from docker containers (172.x range is internal dhcp)
 iptables -A INPUT -s "${docker_network_cidr}" -d "${docker_network_cidr}" -j ACCEPT
@@ -94,33 +93,14 @@ iptables -A INPUT -i eth0 -p $VPN_PROTOCOL --sport $VPN_PORT -j ACCEPT
 iptables -A INPUT -i eth0 -p tcp --dport 6789 -j ACCEPT
 iptables -A INPUT -i eth0 -p tcp --sport 6789 -j ACCEPT
 
-# additional port list for scripts
-if [[ ! -z "${ADDITIONAL_PORTS}" ]]; then
-
-	# split comma seperated string into list from ADDITIONAL_PORTS env variable
-	IFS=',' read -ra additional_port_list <<< "${ADDITIONAL_PORTS}"
-
-	# process additional ports in the list
-	for additional_port_item in "${additional_port_list[@]}"; do
-
-		# strip whitespace from start and end of additional_port_item
-		additional_port_item=$(echo "${additional_port_item}" | sed -e 's/^[ \t]*//')
-
-		echo "[info] Adding additional incoming port ${additional_port_item} for eth0"
-
-		# accept input to additional port for eth0
-		iptables -A INPUT -i eth0 -p tcp --dport "${additional_port_item}" -j ACCEPT
-		iptables -A INPUT -i eth0 -p tcp --sport "${additional_port_item}" -j ACCEPT
-
-	done
-
-fi
-
 # process lan networks in the list
 for lan_network_item in "${lan_network_list[@]}"; do
 
 	# strip whitespace from start and end of lan_network_item
-	lan_network_item=$(echo "${lan_network_item}" | sed -e 's/^[ \t]*//')
+	lan_network_item=$(echo "${lan_network_item}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
+
+	# accept input to nzbget daemon port - used for lan access
+	iptables -A INPUT -i eth0 -s "${lan_network_item}" -p tcp --dport 58846 -j ACCEPT
 
 	# accept input to privoxy if enabled
 	if [[ $ENABLE_PRIVOXY == "yes" ]]; then
@@ -128,9 +108,6 @@ for lan_network_item in "${lan_network_list[@]}"; do
 	fi
 
 done
-
-# accept input dns lookup
-iptables -A INPUT -p udp --sport 53 -j ACCEPT
 
 # accept input icmp (ping)
 iptables -A INPUT -p icmp --icmp-type echo-reply -j ACCEPT
@@ -141,11 +118,14 @@ iptables -A INPUT -i lo -j ACCEPT
 # output iptable rules
 ###
 
-# set policy to drop for output
+# set policy to drop ipv4 for output
 iptables -P OUTPUT DROP
 
+# set policy to drop ipv6 for output
+ip6tables -P OUTPUT DROP 1>&- 2>&-
+
 # accept output from tunnel adapter
-iptables -A OUTPUT -o "${VPN_DEVICE_TYPE}"0 -j ACCEPT
+iptables -A OUTPUT -o "${VPN_DEVICE_TYPE}" -j ACCEPT
 
 # accept output to/from docker containers (172.x range is internal dhcp)
 iptables -A OUTPUT -s "${docker_network_cidr}" -d "${docker_network_cidr}" -j ACCEPT
@@ -166,33 +146,14 @@ fi
 iptables -A OUTPUT -o eth0 -p tcp --dport 6789 -j ACCEPT
 iptables -A OUTPUT -o eth0 -p tcp --sport 6789 -j ACCEPT
 
-# additional port list for scripts
-if [[ ! -z "${ADDITIONAL_PORTS}" ]]; then
-
-	# split comma seperated string into list from ADDITIONAL_PORTS env variable
-	IFS=',' read -ra additional_port_list <<< "${ADDITIONAL_PORTS}"
-
-	# process additional ports in the list
-	for additional_port_item in "${additional_port_list[@]}"; do
-
-		# strip whitespace from start and end of additional_port_item
-		additional_port_item=$(echo "${additional_port_item}" | sed -e 's/^[ \t]*//')
-
-		echo "[info] Adding additional outgoing port ${additional_port_item} for eth0"
-
-		# accept output to additional port for eth0
-		iptables -A OUTPUT -o eth0 -p tcp --dport "${additional_port_item}" -j ACCEPT
-		iptables -A OUTPUT -o eth0 -p tcp --sport "${additional_port_item}" -j ACCEPT
-
-	done
-
-fi
-
 # process lan networks in the list
 for lan_network_item in "${lan_network_list[@]}"; do
 
 	# strip whitespace from start and end of lan_network_item
-	lan_network_item=$(echo "${lan_network_item}" | sed -e 's/^[ \t]*//')
+	lan_network_item=$(echo "${lan_network_item}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
+
+	# accept output to nzbget daemon port - used for lan access
+	iptables -A OUTPUT -o eth0 -d "${lan_network_item}" -p tcp --sport 58846 -j ACCEPT
 
 	# accept output from privoxy if enabled - used for lan access
 	if [[ $ENABLE_PRIVOXY == "yes" ]]; then
@@ -200,9 +161,6 @@ for lan_network_item in "${lan_network_list[@]}"; do
 	fi
 
 done
-
-# accept output for dns lookup
-iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
 
 # accept output for icmp (ping)
 iptables -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
@@ -214,3 +172,8 @@ echo "[info] iptables defined as follows..."
 echo "--------------------"
 iptables -S
 echo "--------------------"
+
+# change iptable 'tcp' to openvpn config compatible 'tcp-client' (this file is sourced)
+if [[ "${VPN_PROTOCOL}" == "tcp" ]]; then
+	export VPN_PROTOCOL="tcp-client"
+fi

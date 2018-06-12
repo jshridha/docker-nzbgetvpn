@@ -21,7 +21,6 @@ else
 
 fi
 sed -i '/WebDir=*/ s/=.*/=${AppDir}\/webui/' /config/nzbget.conf
-sed -i '/ConfigTemplate=*/ s/=.*/=${AppDir}/webui/nzbget.conf.template/' /config/nzbget.conf
 sed -i  '/ConfigTemplate=*/ s/=.*/=${AppDir}\/webui\/nzbget.conf.template/' /config/nzbget.conf
 
 # if vpn set to "no" then don't run openvpn

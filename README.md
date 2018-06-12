@@ -24,17 +24,14 @@ docker run -d \
     -e VPN_ENABLED=<yes|no> \
     -e VPN_USER=<vpn username> \
     -e VPN_PASS=<vpn password> \
-    -e VPN_REMOTE=<vpn remote gateway> \
-    -e VPN_PORT=<vpn remote port> \
-    -e VPN_PROTOCOL=<vpn remote protocol> \
-    -e VPN_DEVICE_TYPE=<tun|tap> \
     -e VPN_PROV=<pia|airvpn|custom> \
-    -e STRONG_CERTS=<yes|no> \
-	-e ENABLE_PRIVOXY=<yes|no> \
+    -e VPN_OPTIONS=<additional openvpn cli options> \
+    -e STRICT_PORT_FORWARD=<yes|no> \
+    -e ENABLE_PRIVOXY=<yes|no> \
     -e LAN_NETWORK=<lan ipv4 network>/<cidr notation> \
     -e NAME_SERVERS=<name server ip(s)> \
     -e DEBUG=<true|false> \
-	-e UMASK=<umask for created files> \
+    -e UMASK=<umask for created files> \
     -e PUID=<UID for user> \
     -e PGID=<GID for user> \
     jshridha/docker-nzbgetvpn:latest
@@ -65,17 +62,13 @@ docker run -d \
     -e VPN_ENABLED=yes \
     -e VPN_USER=myusername \
     -e VPN_PASS=mypassword \
-    -e VPN_REMOTE=nl.privateinternetaccess.com \
-    -e VPN_PORT=1198 \
-    -e VPN_PROTOCOL=udp \
-    -e VPN_DEVICE_TYPE=<tun|tap> \
     -e VPN_PROV=pia \
-    -e STRONG_CERTS=no \
-	-e ENABLE_PRIVOXY=yes \
+    -e STRICT_PORT_FORWARD=yes \
+    -e ENABLE_PRIVOXY=yes \
     -e LAN_NETWORK=192.168.1.0/24 \
-    -e NAME_SERVERS=8.8.8.8,8.8.4.4 \
+    -e NAME_SERVERS=209.222.18.222,37.235.1.174,1.1.1.1,8.8.8.8,209.222.18.218,37.235.1.177,1.0.0.1,8.8.4.4 \
     -e DEBUG=false \
-	-e UMASK=000 \
+    -e UMASK=000 \
     -e PUID=0 \
     -e PGID=0 \
     jshridha/docker-nzbgetvpn:latest
@@ -100,18 +93,13 @@ docker run -d \
     --name=nzbgetvpn \
     -v /apps/docker/nzbget/data:/data \
     -v /apps/docker/nzbget/config:/config \
-    -v /etc/localtime:/etc/localtime:ro \
     -e VPN_ENABLED=yes \
-    -e VPN_REMOTE=nl.vpn.airdns.org \
-    -e VPN_PORT=443 \
-    -e VPN_PROTOCOL=udp \
-    -e VPN_DEVICE_TYPE=<tun|tap> \
     -e VPN_PROV=airvpn \
-	-e ENABLE_PRIVOXY=yes \
+    -e ENABLE_PRIVOXY=yes \
     -e LAN_NETWORK=192.168.1.0/24 \
-    -e NAME_SERVERS=8.8.8.8,8.8.4.4 \
+    -e NAME_SERVERS=209.222.18.222,37.235.1.174,8.8.8.8,209.222.18.218,37.235.1.177,8.8.4.4 \
     -e DEBUG=false \
-	-e UMASK=000 \
+    -e UMASK=000 \
     -e PUID=0 \
     -e PGID=0 \
     jshridha/docker-nzbgetvpn:latest
@@ -119,14 +107,25 @@ docker run -d \
 
 **Notes**
 
+Please note this Docker image does not include the required OpenVPN configuration file and certificates. These will typically be downloaded from your VPN providers website (look for OpenVPN configuration files), and generally are zipped.
+
+PIA users - The URL to download the OpenVPN configuration files and certs is:-
+
+https://www.privateinternetaccess.com/openvpn/openvpn.zip
+
+Once you have downloaded the zip (normally a zip as they contain multiple ovpn files) then extract it to /config/openvpn/ folder (if that folder doesn't exist then start and stop the docker container to force the creation of the folder).
+
+If there are multiple ovpn files then please delete the ones you don't want to use (normally filename follows location of the endpoint) leaving just a single ovpn file and the certificates referenced in the ovpn file (certificates will normally have a crt and/or pem extension).
+
 User ID (PUID) and Group ID (PGID) can be found by issuing the following command for the user you want to run the container as:-
+
 
 ```
 id <username>
 ```
 
-The STRONG_CERTS environment variable is used to define whether to use strong certificates and enhanced encryption ciphers when connecting to PIA (does not affect other providers).
 ___
 If you appreciate my work, then please consider buying me or binhex a beer  :D
 
 [Support forum](http://lime-technology.com/forum/index.php?topic=38930)
+

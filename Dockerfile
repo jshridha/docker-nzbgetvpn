@@ -1,4 +1,4 @@
-FROM binhex/arch-openvpn:2.3.9-103
+FROM binhex/arch-openvpn:2018040901
 MAINTAINER jshridha
 ENV NZBGET_VERSION=20.0
 # additional files
