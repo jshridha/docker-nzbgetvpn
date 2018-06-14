@@ -14,6 +14,9 @@ set -e
 
 # define pacman packages
 pacman_packages="git python2 python2-pyopenssl python2-feedparser p7zip ipcalc unzip unrar python3 wget"
+pacman_packages="$pacman_packages python2-requests-oauthlib python-requests-oauthlib \
+              python2-markdown python-markdown \
+              python2-decorator python-decorator"
 
 # install compiled packages using pacman
 if [[ ! -z "${pacman_packages}" ]]; then
