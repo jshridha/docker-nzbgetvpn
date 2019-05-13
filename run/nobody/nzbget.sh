@@ -40,6 +40,7 @@ else
 
 	# set triggers to first run
 	nzbget_running="false"
+	privoxy_running="false"
 
 	# while loop to check ip
 	while true; do
@@ -76,8 +77,36 @@ else
 
 			fi
 
+			if [[ "${ENABLE_PRIVOXY}" == "yes" ]]; then
+
+				# check if privoxy is running, if not then skip shutdown of process
+				if ! pgrep -fa "privoxy" > /dev/null; then
+
+					echo "[info] Privoxy not running"
+
+				else
+
+					# mark as privoxy as running
+					privoxy_running="true"
+
+				fi
+
+			fi
+
+			if [[ "${ENABLE_PRIVOXY}" == "yes" ]]; then
+
+				if [[ "${privoxy_running}" == "false" ]]; then
+
+					# run script to start privoxy
+					source /home/nobody/privoxy.sh
+
+				fi
+
+			fi
+
 			# reset triggers to negative values
 			nzbget_running="false"
+			privoxy_running="false"
 
 			if [[ "${DEBUG}" == "true" ]]; then
 
