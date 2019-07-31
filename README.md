@@ -2,6 +2,7 @@
 
 [Nzbget website](http://nzbget.net/)  
 [OpenVPN website](https://openvpn.net/)  
+[Privoxy website](http://www.privoxy.org/)
 
 **Description**
 
@@ -9,7 +10,7 @@ NZBGet is a cross-platform binary newsgrabber for nzb files, written in C++. It 
 
 **Build notes**
 
-Latest stable NZBGet release from Arch Linux repo (v19.0)
+Latest stable NZBGet release from Arch Linux repo (v21.0)  
 Latest stable OpenVPN release from Arch Linux repo.
 
 **Usage**
@@ -43,7 +44,7 @@ Please replace all user variables in the above command defined by <> with the co
 
 `http://<host ip>:6789`
 
-username:- nzbget
+username:- nzbget  
 password:- tegbzn6789
 
 **PIA provider**
