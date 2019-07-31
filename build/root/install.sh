@@ -3,12 +3,6 @@
 # exit script if return code != 0
 set -e
 
-# build scripts
-####
-
-# call custom install script
-#source /root/custom.sh
-
 # pacman packages
 ####
 
@@ -23,15 +17,6 @@ if [[ ! -z "${pacman_packages}" ]]; then
 	pacman -S --needed $pacman_packages --noconfirm
 fi
 
-# aor packages
-####
-
-# define arch official repo (aor) packages
-aor_packages=""
-
-# call aor script (arch official repo)
-source /root/aor.sh
-
 # aur packages
 ####
 
@@ -39,7 +24,10 @@ source /root/aor.sh
 aur_packages=""
 
 # call aur install script (arch user repo)
-source /root/aur.sh
+source aur.sh
+
+# container perms
+####
 
 # install nzbget
 #curl -o /tmp/nzbget.pkg.tar.xz https://archive.archlinux.org/packages/n/nzbget/nzbget-$NZBGET_VERSION-x86_64.pkg.tar.xz  
@@ -49,17 +37,30 @@ wget -O /tmp/nzbget.run https://github.com/nzbget/nzbget/releases/download/v$NZB
 sh /tmp/nzbget.run --destdir /usr/sbin/nzbget_bin
 ln -s /usr/sbin/nzbget_bin/nzbget /usr/sbin/nzbget
 
-# config
-####
 
-# container perms
-####
-
-# create file with contets of here doc
-cat <<'EOF' > /tmp/permissions_heredoc
-# set permissions inside container
-chown -R "${PUID}":"${PGID}" /usr/bin/nzbget /usr/bin/privoxy /etc/privoxy /home/nobody
+# set permissions for container during build - Do NOT double quote variable for install_paths otherwise this will wrap space separated paths as a single string
 chmod -R 775 /usr/bin/nzbget /usr/bin/privoxy /etc/privoxy /home/nobody
+
+# create file with contents of here doc, note EOF is NOT quoted to allow us to expand current variable 'install_paths'
+# we use escaping to prevent variable expansion for PUID and PGID, as we want these expanded at runtime of init.sh
+cat <<EOF > /tmp/permissions_heredoc
+
+# get previous puid/pgid (if first run then will be empty string)
+previous_puid=\$(cat "/root/puid" 2>/dev/null || true)
+previous_pgid=\$(cat "/root/pgid" 2>/dev/null || true)
+
+# if first run (no puid or pgid files in /tmp) or the PUID or PGID env vars are different 
+# from the previous run then re-apply chown with current PUID and PGID values.
+if [[ ! -f "/root/puid" || ! -f "/root/pgid" || "\${previous_puid}" != "\${PUID}" || "\${previous_pgid}" != "\${PGID}" ]]; then
+
+	# set permissions inside container - Do NOT double quote variable for install_paths otherwise this will wrap space separated paths as a single string
+	chown -R "\${PUID}":"\${PGID}" /usr/bin/nzbget /usr/bin/privoxy /etc/privoxy /home/nobody
+
+fi
+
+# write out current PUID and PGID to files in /root (used to compare on next run)
+echo "\${PUID}" > /root/puid
+echo "\${PGID}" > /root/pgid
 
 EOF
 
@@ -67,7 +68,7 @@ EOF
 sed -i '/# PERMISSIONS_PLACEHOLDER/{
     s/# PERMISSIONS_PLACEHOLDER//g
     r /tmp/permissions_heredoc
-}' /root/init.sh
+}' /usr/local/bin/init.sh
 rm /tmp/permissions_heredoc
 
 # env vars
@@ -83,9 +84,16 @@ if [[ ! -z "${check_network}" ]]; then
 	echo "[crit] Network type detected as 'Host', this will cause major issues, please stop the container and switch back to 'Bridge' mode" | ts '%Y-%m-%d %H:%M:%.S' && exit 1
 fi
 
-export VPN_ENABLED=$(echo "${VPN_ENABLED}" | sed -e 's/^[ \t]*//')
+export VPN_ENABLED=$(echo "${VPN_ENABLED}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
 if [[ ! -z "${VPN_ENABLED}" ]]; then
-	echo "[info] VPN_ENABLED defined as '${VPN_ENABLED}'" | ts '%Y-%m-%d %H:%M:%.S'
+	if [ "${VPN_ENABLED}" != "no" ] && [ "${VPN_ENABLED}" != "No" ] && [ "${VPN_ENABLED}" != "NO" ]; then
+		export VPN_ENABLED="yes"
+		echo "[info] VPN_ENABLED defined as '${VPN_ENABLED}'" | ts '%Y-%m-%d %H:%M:%.S'
+	else
+		export VPN_ENABLED="no"
+		echo "[info] VPN_ENABLED defined as '${VPN_ENABLED}'" | ts '%Y-%m-%d %H:%M:%.S'
+		echo "[warn] !!IMPORTANT!! VPN IS SET TO DISABLED', YOU WILL NOT BE SECURE" | ts '%Y-%m-%d %H:%M:%.S'
+	fi
 else
 	echo "[warn] VPN_ENABLED not defined,(via -e VPN_ENABLED), defaulting to 'yes'" | ts '%Y-%m-%d %H:%M:%.S'
 	export VPN_ENABLED="yes"
@@ -122,7 +130,7 @@ if [[ $VPN_ENABLED == "yes" ]]; then
 	echo "[info] OpenVPN config file (ovpn extension) is located at ${VPN_CONFIG}" | ts '%Y-%m-%d %H:%M:%.S'
 
 	# convert CRLF (windows) to LF (unix) for ovpn
-	/usr/bin/dos2unix "${VPN_CONFIG}" 1> /dev/null
+	/usr/bin/dos2unix "${VPN_CONFIG}"
 
 	# get first matching 'remote' line in ovpn
 	vpn_remote_line=$(cat "${VPN_CONFIG}" | grep -P -o -m 1 '^(\s+)?remote\s.*')
@@ -164,11 +172,10 @@ if [[ $VPN_ENABLED == "yes" ]]; then
 		echo "[crit] VPN_PORT not found in ${VPN_CONFIG}, exiting..." | ts '%Y-%m-%d %H:%M:%.S' && exit 1
 	fi
 
-	# if 'proto' is old format 'tcp' then replace with newer 'tcp-client' format
-	sed -i "s/^proto\stcp$/proto tcp-client/g" "${VPN_CONFIG}"
-
 	export VPN_PROTOCOL=$(cat "${VPN_CONFIG}" | grep -P -o -m 1 '(?<=^proto\s)[^\r\n]+' | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
 	if [[ ! -z "${VPN_PROTOCOL}" ]]; then
+		# if 'proto' is old format 'tcp' then forcibly set to newer 'tcp-client' format
+		sed -i "s/^proto\stcp$/proto tcp-client/g" "${VPN_CONFIG}"
 		echo "[info] VPN_PROTOCOL defined as '${VPN_PROTOCOL}'" | ts '%Y-%m-%d %H:%M:%.S'
 	else
 		export VPN_PROTOCOL=$(echo "${vpn_remote_line}" | grep -P -o -m 1 'udp|tcp-client|tcp$' | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
@@ -201,6 +208,13 @@ if [[ $VPN_ENABLED == "yes" ]]; then
 		echo "[info] LAN_NETWORK defined as '${LAN_NETWORK}'" | ts '%Y-%m-%d %H:%M:%.S'
 	else
 		echo "[crit] LAN_NETWORK not defined (via -e LAN_NETWORK), exiting..." | ts '%Y-%m-%d %H:%M:%.S' && exit 1
+	fi
+
+	export ADDITIONAL_PORTS=$(echo "${ADDITIONAL_PORTS}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
+	if [[ ! -z "${ADDITIONAL_PORTS}" ]]; then
+			echo "[info] ADDITIONAL_PORTS defined as '${ADDITIONAL_PORTS}'" | ts '%Y-%m-%d %H:%M:%.S'
+	else
+			echo "[info] ADDITIONAL_PORTS not defined (via -e ADDITIONAL_PORTS), skipping allow for custom incoming ports" | ts '%Y-%m-%d %H:%M:%.S'
 	fi
 
 	export NAME_SERVERS=$(echo "${NAME_SERVERS}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
@@ -236,7 +250,6 @@ if [[ $VPN_ENABLED == "yes" ]]; then
 	fi
 
 	if [[ $VPN_PROV == "pia" ]]; then
-
 		export STRICT_PORT_FORWARD=$(echo "${STRICT_PORT_FORWARD}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
 		if [[ ! -z "${STRICT_PORT_FORWARD}" ]]; then
 			echo "[info] STRICT_PORT_FORWARD defined as '${STRICT_PORT_FORWARD}'" | ts '%Y-%m-%d %H:%M:%.S'
@@ -244,7 +257,6 @@ if [[ $VPN_ENABLED == "yes" ]]; then
 			echo "[warn] STRICT_PORT_FORWARD not defined (via -e STRICT_PORT_FORWARD), defaulting to 'yes'" | ts '%Y-%m-%d %H:%M:%.S'
 			export STRICT_PORT_FORWARD="yes"
 		fi
-
 	fi
 
 	export ENABLE_PRIVOXY=$(echo "${ENABLE_PRIVOXY}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')
@@ -255,8 +267,6 @@ if [[ $VPN_ENABLED == "yes" ]]; then
 		export ENABLE_PRIVOXY="no"
 	fi
 
-elif [[ $VPN_ENABLED == "no" ]]; then
-	echo "[warn] !!IMPORTANT!! You have set the VPN to disabled, you will NOT be secure!" | ts '%Y-%m-%d %H:%M:%.S'
 fi
 
 EOF
@@ -265,11 +275,12 @@ EOF
 sed -i '/# ENVVARS_PLACEHOLDER/{
     s/# ENVVARS_PLACEHOLDER//g
     r /tmp/envvars_heredoc
-}' /root/init.sh
+}' /usr/local/bin/init.sh
 rm /tmp/envvars_heredoc
 
 # cleanup
 yes|pacman -Scc
+pacman --noconfirm -Rns $(pacman -Qtdq) 2> /dev/null || true
 rm -rf /usr/share/locale/*
 rm -rf /usr/share/man/*
 rm -rf /usr/share/gtk-doc/*
