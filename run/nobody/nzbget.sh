@@ -1,5 +1,26 @@
 #!/bin/bash
 
+CONFIG_DIR=/usr/sbin/nzbget_bin
+
+if [[ ! -f /config/nzbget.conf ]]; then
+
+
+	echo "[info] Nzbget config file doesn't exist, copying default..."
+	cp $CONFIG_DIR/nzbget.conf /config/
+
+	sed -i 's/MainDir=~\/downloads/MainDir=\/data/g' /config/nzbget.conf
+	sed -i '/MainDir=${AppDir}\/downloads/ s/=.*/=\/data/' /config/nzbget.conf
+
+else
+
+	echo "[info] Nzbget config file already exists, skipping copy"
+	sed -i '/WebDir=${AppDir}\/webui/ s/=.*/=\/usr\/share\/nzbget\/webui/' /config/nzbget.conf
+
+fi
+sed -i '/WebDir=*/ s/=.*/=${AppDir}\/webui/' /config/nzbget.conf
+sed -i  '/ConfigTemplate=*/ s/=.*/=${AppDir}\/webui\/nzbget.conf.template/' /config/nzbget.conf
+
+
 if [[ "${nzbget_running}" == "false" ]]; then
 
 	echo "[info] Attempting to start nzbget..."
