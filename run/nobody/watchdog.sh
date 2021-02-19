@@ -17,7 +17,7 @@ while true; do
 		if [[ ! -z "${vpn_ip}" ]]; then
 
 			# check if nzbget is running, if not then skip shutdown of process
-			if ! pgrep -fa "nzbget" > /dev/null; then
+			if ! pgrep -x nzbget > /dev/null; then
 
 				echo "[info] nzbget not running"
 
@@ -72,7 +72,7 @@ while true; do
 	else
 
 		# check if nzbget is running, if not then start via nzbget.sh
-		if ! pgrep -fa "nzbget" > /dev/null; then
+		if ! pgrep -x nzbget > /dev/null; then
 
 			echo "[info] Nzbget not running"
 

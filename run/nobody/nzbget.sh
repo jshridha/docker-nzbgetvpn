@@ -12,7 +12,7 @@ if [[ "${nzbget_running}" == "false" ]]; then
 	retry_wait=1
 	while true; do
 
-		if ! pgrep -fa "nzbget" > /dev/null; then
+		if ! pgrep -x nzbget > /dev/null; then
 
 			retry_count=$((retry_count-1))
 			if [ "${retry_count}" -eq "0" ]; then
