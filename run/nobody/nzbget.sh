@@ -1,127 +1,53 @@
 #!/bin/bash
 
-#CONFIG_DIR=/usr/share/nzbget
-CONFIG_DIR=/usr/sbin/nzbget_bin
+if [[ "${nzbget_running}" == "false" ]]; then
 
-# if config file doesnt exist then copy stock config file
-if [[ ! -f /config/nzbget.conf ]]; then
+	echo "[info] Attempting to start nzbget..."
 
-	echo "[info] Nzbget config file doesn't exist, copying default..."
-	cp $CONFIG_DIR/nzbget.conf /config/
-
-	# set maindir to /data folder for downloads
-	sed -i 's/MainDir=~\/downloads/MainDir=\/data/g' /config/nzbget.conf
-	sed -i '/MainDir=${AppDir}\/downloads/ s/=.*/=\/data/' /config/nzbget.conf
-
-else
-
-	echo "[info] Nzbget config file already exists, skipping copy"
-#	sed -i '/ConfigTemplate=${AppDir}/ s/=.*/=\/usr\/share\/nzbget\/nzbget.conf/' /config/nzbget.conf
-	sed -i '/WebDir=${AppDir}\/webui/ s/=.*/=\/usr\/share\/nzbget\/webui/' /config/nzbget.conf
-
-fi
-sed -i '/WebDir=*/ s/=.*/=${AppDir}\/webui/' /config/nzbget.conf
-sed -i  '/ConfigTemplate=*/ s/=.*/=${AppDir}\/webui\/nzbget.conf.template/' /config/nzbget.conf
-
-# if vpn set to "no" then don't run openvpn
-if [[ "${VPN_ENABLED}" == "no" ]]; then
-
-	echo "[info] VPN not enabled, skipping VPN tunnel local ip checks"
-
-	# run nzbget (non daemonized, blocking)
-	echo "[info] Attempting to start Nzbget..."
+	# run nzbget
 	/usr/bin/nzbget -D -c /config/nzbget.conf
 
-	echo "[info] Nzbget started"
-
-else
-
-	echo "[info] VPN is enabled, checking VPN tunnel local ip is valid"
-
-	# set triggers to first run
-	nzbget_running="false"
-	privoxy_running="false"
-
-	# while loop to check ip
+	# make sure process nzbget DOES exist
+	retry_count=12
+	retry_wait=1
 	while true; do
 
-		# run script to check ip is valid for tunnel device (will block until valid)
-		source /home/nobody/getvpnip.sh
+		if ! pgrep -fa "nzbget" > /dev/null; then
 
-		# if vpn_ip is not blank then run, otherwise log warning
-		if [[ ! -z "${vpn_ip}" ]]; then
+			retry_count=$((retry_count-1))
+			if [ "${retry_count}" -eq "0" ]; then
 
-			# check if nzbget is running, if not then skip reconfigure for ip
-			if ! pgrep -x nzbget > /dev/null; then
-
-				echo "[info] Nzbget not running"
-
-				# mark as nzbget not running
-				nzbget_running="false"
+				echo "[warn] Wait for nzbget process to start aborted, too many retries"
 
 			else
 
-				# if nzbget is running, then reconfigure ip
-				nzbget_running="true"
-
-			fi
-
-			if [[ "${nzbget_running}" == "false" ]]; then
-
-				echo "[info] Attempting to start Nzbget..."
-
-				# run nzbget (daemonized, non-blocking)
-				/usr/bin/nzbget -D -c /config/nzbget.conf
-
-				echo "[info] Nzbget started"
-
-			fi
-
-			if [[ "${ENABLE_PRIVOXY}" == "yes" ]]; then
-
-				# check if privoxy is running, if not then skip shutdown of process
-				if ! pgrep -fa "privoxy" > /dev/null; then
-
-					echo "[info] Privoxy not running"
-
-				else
-
-					# mark as privoxy as running
-					privoxy_running="true"
-
+				if [[ "${DEBUG}" == "true" ]]; then
+					echo "[debug] Waiting for nzbget process to start"
+					echo "[debug] Re-check in ${retry_wait} secs..."
+					echo "[debug] ${retry_count} retries left"
 				fi
-
-			fi
-
-			if [[ "${ENABLE_PRIVOXY}" == "yes" ]]; then
-
-				if [[ "${privoxy_running}" == "false" ]]; then
-
-					# run script to start privoxy
-					source /home/nobody/privoxy.sh
-
-				fi
-
-			fi
-
-			# reset triggers to negative values
-			nzbget_running="false"
-			privoxy_running="false"
-
-			if [[ "${DEBUG}" == "true" ]]; then
-
-				echo "[debug] VPN IP is ${vpn_ip}"
+				sleep "${retry_wait}s"
 
 			fi
 
 		else
 
-			echo "[warn] VPN IP not detected, VPN tunnel maybe down"
+			echo "[info] Nzbget process started"
+			break
 
 		fi
 
-		sleep 30s
-
 	done
 
+	echo "[info] Waiting for Nzbget process to start listening on port 6789..."
+
+	while [[ $(netstat -lnt | awk "\$6 == \"LISTEN\" && \$4 ~ \".6789\"") == "" ]]; do
+		sleep 0.1
+	done
+
+	echo "[info] Nzbget process is listening on port 6789"
+
 fi
+
+# set nzbget ip to current vpn ip (used when checking for changes on next run)
+nzbget_ip="${vpn_ip}"

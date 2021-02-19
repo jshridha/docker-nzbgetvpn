@@ -1,4 +1,4 @@
-FROM binhex/arch-int-openvpn:2019050202
+FROM binhex/arch-int-vpn:latest
 MAINTAINER jshridha
 ENV NZBGET_VERSION=21.0
 # additional files
@@ -32,13 +32,11 @@ VOLUME /config
 # map /data to host defined data path (used to store data from app)
 VOLUME /data
 
-# expose port for http and privoxy
-EXPOSE 6789 8118 
+# expose port for http
+EXPOSE 6789
 
 # set permissions
 #################
 
-ENV STRICT_PORT_FORWARD=no
-
 # run script to set uid, gid and permissions
-CMD ["/bin/bash", "/root/init.sh"]
+CMD ["/bin/bash", "/usr/local/bin/init.sh"]
