@@ -144,6 +144,36 @@ PIA users - The WireGuard configuration file will be auto generated and will be 
 
 Other users - Please download your WireGuard configuration file from your VPN provider, start and stop the container to generate the folder ```/config/wireguard/``` and then place your WireGuard configuration file in there.
 
+
+
+**Docker Compose Example**
+
+```
+version: "3"
+services:
+  nzbget:
+    container_name: nzbget
+    image: jshridha/docker-nzbgetvpn:latest
+    volumes:
+      - /root/docker/config:/config
+      - /root/docker/data:/data
+    ports:
+      - 6789:6789/tcp
+    environment:
+      - STRICT_PORT_FORWARD=yes
+      - PGID=1000
+      - PUID=1000
+      - VPN_PROV=pia
+      - LAN_NETWORK=192.168.1.0/24
+      - NAME_SERVERS=209.222.18.222,37.235.1.174,1.1.1.1,8.8.8.8,209.222.18.218,37.235.1.177,1.0.0.1,8.8.4.4
+      - VPN_ENABLED=yes
+      - VPN_USER=xxxx
+      - VPN_PASS=xxxx
+    restart: unless-stopped
+```
+
+
+
 **Notes**  
 Due to Google and OpenDNS supporting EDNS Client Subnet it is recommended NOT to use either of these NS providers.
 The list of default NS providers in the above example(s) is as follows:-
