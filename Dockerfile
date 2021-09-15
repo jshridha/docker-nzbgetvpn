@@ -1,6 +1,6 @@
 FROM binhex/arch-int-vpn:latest
 MAINTAINER jshridha
-
+ENV NZBGET_VERSION=21.0
 # additional files
 ##################
 

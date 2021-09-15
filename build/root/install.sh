@@ -47,10 +47,9 @@ aur_packages=""
 # call aur install script (arch user repo)
 source aur.sh
 
-# fetch newest version and download it
-curl -s https://api.github.com/repos/nzbget/nzbget/releases/latest | grep "bin-linux.run" | cut -d ":" -f 2,3 | grep "releases/" | tr -d \" | wget -qi - -O /tmp/nzbget.run
-
 # install nzbget
+
+wget -O /tmp/nzbget.run https://github.com/nzbget/nzbget/releases/download/v$NZBGET_VERSION/nzbget-$NZBGET_VERSION-bin-linux.run
 sh /tmp/nzbget.run --destdir /usr/sbin/nzbget_bin
 ln -s /usr/sbin/nzbget_bin/nzbget /usr/sbin/nzbget
 
