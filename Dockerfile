@@ -23,6 +23,9 @@ ADD run/nobody/*.sh /home/nobody/
 RUN chmod +x /root/*.sh /home/nobody/*.sh && \
 	/bin/bash /root/install.sh
 
+# Replace default CA certificate store with updated one
+COPY build/cacert.pem /usr/sbin/nzbget_bin/
+
 # docker settings
 #################
 
