@@ -19,6 +19,7 @@ else
 fi
 sed -i '/WebDir=*/ s/=.*/=${AppDir}\/webui/' /config/nzbget.conf
 sed -i  '/ConfigTemplate=*/ s/=.*/=${AppDir}\/webui\/nzbget.conf.template/' /config/nzbget.conf
+sed -i 's/^CertStore=$/CertStore=\/etc\/ssl\/certs\/ca-certificates.crt/g' /config/nzbget.conf
 
 
 if [[ "${nzbget_running}" == "false" ]]; then
