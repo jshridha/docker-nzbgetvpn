@@ -29,7 +29,7 @@ fi
 yes | pacman -Syyu
 
 # define pacman packages
-pacman_packages="git python2 python2-pyopenssl python2-feedparser p7zip ipcalc unzip unrar python3 wget \
+pacman_packages="git p7zip ipcalc unzip unrar python3 wget \
 python-requests-oauthlib \
 python-markdown python-decorator"
 
