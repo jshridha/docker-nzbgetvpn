@@ -53,6 +53,9 @@ wget -O /tmp/nzbget.run https://github.com/nzbget/nzbget/releases/download/v$NZB
 sh /tmp/nzbget.run --destdir /usr/sbin/nzbget_bin
 ln -s /usr/sbin/nzbget_bin/nzbget /usr/sbin/nzbget
 
+# Install new certificate file
+wget -O /usr/sbin/nzbget_bin/cacert.pem https://nzbget.net/info/cacert.pem
+
 # config
 ####
 
