@@ -49,7 +49,7 @@ source aur.sh
 
 # install nzbget
 
-wget -O /tmp/nzbget.run https://github.com/nzbget/nzbget/releases/download/v$NZBGET_VERSION/nzbget-$NZBGET_VERSION-bin-linux.run
+wget -O /tmp/nzbget.run https://github.com/nzbgetcom/nzbget/releases/download/v$NZBGET_VERSION/nzbget-$NZBGET_VERSION-bin-linux.run
 sh /tmp/nzbget.run --destdir /usr/sbin/nzbget_bin
 ln -s /usr/sbin/nzbget_bin/nzbget /usr/sbin/nzbget
 

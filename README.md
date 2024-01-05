@@ -11,7 +11,7 @@ This Docker includes OpenVPN and WireGuard to ensure a secure and private connec
 
 **Build notes**
 
-Latest stable NZBGet release from Arch Linux repo (v21.0)
+Latest stable NZBGet release from Arch Linux repo (v22.0)
 Latest stable Privoxy release from Arch Linux repo.  
 Latest stable OpenVPN release from Arch Linux repo.  
 Latest stable WireGuard release from Arch Linux repo.
